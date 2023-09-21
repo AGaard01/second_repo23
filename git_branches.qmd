@@ -25,6 +25,12 @@ Liten start på litteraturstudie.
 
 Innledende avsnitt.
 
+### Versjon 1
+
+```{r}
+plot(mtcars$hp, mtcars$mpg)
+```
+
 ### Versjon 2
 
 ```{r}
