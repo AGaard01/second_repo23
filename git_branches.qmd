@@ -33,6 +33,7 @@ plot(mtcars$hp, mtcars$mpg)
 ```
 
 ### Versjon 2
+
 ```{r}
 plot(cars)
 ```
