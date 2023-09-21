@@ -4,9 +4,9 @@ format: html
 editor: visual
 ---
 
-## Intro
+## Introduksjon
 
-## Lit study
+## Litteraturstudie
 
 ## Analyse
 
