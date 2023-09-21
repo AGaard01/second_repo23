@@ -1,0 +1,336 @@
+---
+title: "nycflights"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(nycflights13)
+```
+
+## Datasett:
+
+```{r}
+flights <- flights
+```
+
+Hvor mange rekker og kolonner vi har i datasettet finner vi ved "dim".
+Kan også se rekker og kolonner hver for seg ved å skrive \[1\] eller \[2\] bak (flights).
+
+```{r}
+dim(flights)
+```
+
+"Class" forteller oss hva vi ser på.
+(Integer er vektor med heltall).
+
+```{r}
+class(flights)
+```
+
+Paged.print: false gir oss en annen formatering.
+Her ser vi de ti første rekkene.
+
+```{r}
+#| paged.print: false
+flights |>
+  head(n = 10)
+```
+
+Her ser vi datasettet sotert.
+
+```{r}
+#| paged.print: false
+flights |>
+  arrange(desc(month), desc(day))
+```
+
+```{r}
+flights <- flights |>
+  arrange(month, day, desc(dep_time))
+```
+
+```{r}
+#| paged.print: false
+flights |> 
+  tail()
+```
+
+## Filter:
+
+Vi vil kun ha med data fra måned 1 og dag 1.
+Vi printer kun ut de 5 siste linjene, dvs.
+de 5 siste flyvningene den dagen.
+
+```{r}
+#| paged.print: false
+flights |> 
+  filter(month == 1, day == 1) |> 
+  print(
+    n = 5, 
+    width = 80
+    )
+```
+
+```{r}
+summary(flights)
+```
+
+## Operators:
+
+! for negasjon: I stedet for å ta med dag 1, 15 og 30, får vi altså alle dager utenom dag 1, 15 og 30.
+
+```{r}
+  flights %>% 
+  filter(month == 1, !(day %in% c(1, 15, 30))) %>% 
+  print(width = 70)
+```
+
+```{r}
+# or er |
+FALSE | FALSE
+```
+
+```{r}
+# and er &
+(TRUE & FALSE) | FALSE
+```
+
+```{r}
+TRUE & (FALSE | TRUE)
+```
+
+## Small Exercise:
+
+1\) How many flights were there in April and September (total)?
+
+```{r}
+#| paged.print: false
+flights |> 
+  filter(month %in% c(4, 9)) |> 
+  nrow()
+```
+
+```{r}
+#| paged.print: false
+flights |> 
+  group_by(month) |> 
+  summarise(antall_flyvninger = n())
+```
+
+Hvor mange flyvninger per dag i januar?
+
+Filtrerer først på måned, kun data fra januar.
+Så tar vi kanuar data og grupperer med hensyn på dag, dvs.
+tall fra 1 til 31.
+Så bruker vi count som teller opp antall innen en gruppe.
+Print gjør at vi skriver ut 31 rekker.
+
+```{r}
+#| paged.print: false
+flights |> 
+  filter(month == 1) |> 
+  group_by(day) |> 
+  count() |> 
+  print(n = 31)
+```
+
+Dagen i januar med flest flyvninger?
+(Sikkert en bedre måte å gjøre det på)
+
+```{r}
+#| paged.print: false
+flights |> 
+  filter(month == 1) |> 
+  group_by(day) |> 
+  count() |> 
+  arrange(desc(n)) |> 
+  print(n = 1)
+```
+
+2\) How many flights were there in total the first two days of a month?
+
+Heller datasettet flights inn i en pipe.
+Bruker filter til å velge dag 1 og 2 i en måned.
+nrow gir oss hvor mange rekker det er snakk om.
+Tar vi vekk nrow får vi hele datasettet.
+
+```{r}
+flights |> 
+  filter(day %in% c(1, 2)) |> 
+  nrow()
+```
+
+3\) How may flights were there during 2013 that had an arrival delay greater than or equal to 15 min., but less than 30 min.?
+
+(Vi kan også bruke komma i stedet for & inne i filter funksjonen. Men dersom vi ønsker å bruke eller må vi bruke \|. ).
+
+```{r}
+flights |> 
+  filter(arr_delay >= 15 & arr_delay < 30) |> 
+  select(arr_delay) |> 
+  nrow()
+```
+
+Her bruker vi eller.
+Grunnen til at vi ikke får alle observasjonene (336 776) er mangelnde observasjoner.
+Skriver vi "summary(flights\$arr_delay)" i console ser vi at det finnes 9430 NA´s som utgjør observasjonene vi mangler.
+
+```{r}
+flights |> 
+  filter(arr_delay >= 15 | arr_delay < 30) |> 
+  select(arr_delay) |> 
+  nrow()
+```
+
+## NA-verdier
+
+Når R regner med NA så sier den at True = 1 og False = 0.
+R konverterer True og False til hhv.
+1 og 0.
+Derfor kan vi bruke funksjonen sum for å finne True-verdiene.
+
+```{r}
+sum(is.na(flights$arr_delay))
+```
+
+## Select
+
+For å droppe variabler legger vi en minus foran.
+Når vi kjører denne ser vi at det nå bare finnes 18 variabler i datasettet vårt (Environment).
+
+```{r}
+#| Dropper variabelen year
+flights <- flights |>
+  select(-year)
+```
+
+Vi kan også si at vi bare ønsker å ta med to variabler, f.eks.
+måned og dag.
+
+```{r}
+flights <- flights |> 
+  select(month:day)
+```
+
+Her reseter vi datasettet til å inkludere alle variablene.
+
+```{r}
+# Henter inn flights på ny
+flights <- nycflights13::flights
+```
+
+Først skiftet vi til norsk navn, deretter setter vi det tilbake vha.
+av rename.
+(NB, man må resete datasettet, som over, ettersom vi har satt -year tidligere).
+Vi ser at vi kan bytte navn i select, som kanskje er lettere, i tillegg til rename.
+
+```{r}
+flights <- flights |> 
+  select(-year) |> 
+  select(
+    month:day, 
+    flyselskap = carrier,
+    halenummer = tailnum, 
+    everything()
+  ) |> 
+# setter tilbake til engelsk variabelnavn vha. rename()
+rename(
+  carrier = flyselskap,
+  tailnum = halenummer
+)
+```
+
+How to select the same variables, but only for May?
+
+```{r}
+arr_delay_May <- flights |> 
+  select(day, month, arr_delay) |> 
+  filter(month == 5) |> 
+  select(-month)
+```
+
+Finne gjennomsnittlig ankomstforsnikelse for de ulike dagene i mai?
+
+(paged.print: false -\> Får tabellen/oppsettet som vi ville fått det i console).
+Vi må bruke na.rm = TRUE pga.
+det finnes NA i datasettet for nesten alle de ulike dagene.
+Vi velger også round for å få 2 desimaler.
+Vi har også funnet median, min, max og total.
+
+```{r}
+#| paged.print: false
+# Gjennomsnittlig ankomstforsinkelse for dagene i Mai 2013
+arr_delay_May |> 
+  group_by(day) |> 
+  summarise(gjennomsnittlig_f = round(
+    mean(
+    arr_delay, 
+    na.rm = TRUE
+    ),
+    digits = 2
+  ),
+  median_f = median(arr_delay, na.rm = TRUE),
+  min_f = min(arr_delay, na.rm = TRUE),
+  max_f = max(arr_delay, na.rm. = TRUE),
+  total_f = sum(arr_delay, na.rm = TRUE),
+  ) |> 
+  print (n = 31)
+```
+
+## Ny variabel; mutate
+
+Først velger vi litt variabler og endrer på rekkefølgen.
+Vi dropper year.
+Bruker ny støttefunksjon for delay, dvs.
+ends_with.
+Her plukker vi ut variabler som ender med delay, det er forsinkelse vi er interessert i her.
+Tar også med distanse og tid i luften.
+
+Gain er en ny variabel som angir hvor mye tid man greier å spare inn på flyplassen.
+Differanse mellom avgangsforsinkelse minus hvor mye flyet var forsinktet når det kom inn.
+
+Speed: air_time står i antall minutter, derfor multipliserer vi med 60.
+
+```{r}
+flights <- flights %>%
+  select(month:day, ends_with("delay"), distance, air_time) %>%
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = (distance/air_time) * 60,
+    ) %>%
+  select(month:day, gain, everything()) %>%
+  arrange(gain)
+head(flights, n = 5) 
+```
+
+## Transmute
+
+Transmute, ikke mutate, gjør at det kun er gain og speed som går videre i pipen.
+Alle andre variabler i pipen er kastet vekk.
+
+```{r}
+my_data <- flights %>%
+    transmute(
+    gain = dep_delay - arr_delay,
+    speed = (distance/air_time) * 60
+    ) %>%
+  arrange(gain)
+head(my_data, n = 3)
+```
+
+Vi kunne brukt mutate og lagd gain og speed, og deretter brukt select.
+Ville gitt samme resultat, som vi ser under.
+
+```{r}
+my_data <- flights %>%
+    mutate(
+    gain = dep_delay - arr_delay,
+    speed = (distance/air_time) * 60
+    ) %>%
+  select(gain, speed) |> 
+  arrange(gain)
+head(my_data, n = 3)
+```
