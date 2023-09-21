@@ -1,11 +1,18 @@
 ---
 title: "Git branches"
+<<<<<<< HEAD
 format: docx
 editor: visual
+=======
+format: html
+editor: visual
+bibliography: references.bib
+>>>>>>> lit_study
 ---
 
 ## Introduksjon
 
+<<<<<<< HEAD
 Liten start på intro.
 
 Litt videre på intro.
@@ -13,6 +20,9 @@ Litt videre på intro.
 Tredje setning i introduksjon.
 
 ## Litteraturstudie
+
+Liten start på litteraturstudie.
+[@allaire2020]
 
 ## Analyse
 
