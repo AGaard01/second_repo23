@@ -1,5 +1,5 @@
 ---
-title: "git_branches"
+title: "Git branches"
 format: html
 editor: visual
 bibliography: references.bib
