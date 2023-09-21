@@ -2,11 +2,15 @@
 title: "git_branches"
 format: html
 editor: visual
+bibliography: references.bib
 ---
 
 ## Introduksjon
 
 ## Litteraturstudie
+
+Liten start på litteraturstudie.
+[@allaire2020]
 
 ## Analyse
 
