@@ -1,0 +1,17 @@
+---
+title: "git_branches"
+format: html
+editor: visual
+---
+
+## Introduksjon
+
+Liten start på intro.
+
+## Litteraturstudie
+
+## Analyse
+
+## Resultater
+
+## Konklusjon
