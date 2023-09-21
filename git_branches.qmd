@@ -8,6 +8,8 @@ editor: visual
 
 Liten start på intro.
 
+Litt videre på intro.
+
 ## Litteraturstudie
 
 ## Analyse
