@@ -6,6 +6,12 @@ editor: visual
 
 ## Introduksjon
 
+Liten start på intro.
+
+Litt videre på intro.
+
+Tredje setning i introduksjon.
+
 ## Litteraturstudie
 
 ## Analyse
