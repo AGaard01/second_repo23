@@ -29,6 +29,12 @@ Innledende avsnitt.
 
 ```{r}
 plot(mtcars$hp, mtcars$mpg)
+
+```
+
+### Versjon 2
+```{r}
+plot(cars)
 ```
 
 ## Resultat
