@@ -25,6 +25,12 @@ Liten start på litteraturstudie.
 
 Innledende avsnitt.
 
+### Versjon 2
+
+```{r}
+plot(cars)
+```
+
 ## Resultat
 
 ## Konklusjon
