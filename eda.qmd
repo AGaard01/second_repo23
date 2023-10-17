@@ -1,0 +1,527 @@
+---
+title: "EDA"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: setup
+#| output: false
+#| message: false
+#| Echo: false
+library(tidyverse)
+library(nycflights13)
+library(gridExtra)
+library(modelr)
+library(grid)
+library(ggplotify)
+library(vtable)
+```
+
+To kolon betyr gå inn i pakken modelr og ta ut heights.
+Da trenger vi ikke å laste inn pakken, som vi har gjort med de ulike pakkene over.
+
+```{r}
+heights <- modelr::heights
+```
+
+Filteret vårt sier at vi tar vekk de ekstreme inntektene (over 300 000).
+
+```{r}
+heights |> 
+  select(income, height) |> 
+  filter(income < 300000) |> 
+  ggplot(mapping = aes(x = height, y = income)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+summary(heights)
+```
+
+Margin lik 2 betyr at den jobber kolonnevis, lik betyr rekkevis.
+Bruker "is.na" til å lage nye vektorer, og så bruker vi sum.
+Det finnes mange ulike typer av "apply".
+
+```{r}
+# NAs in my_heights?
+heights %>% 
+  apply(MARGIN = 2, FUN = is.na) %>% 
+  apply(MARGIN = 2, FUN = sum) 
+```
+
+Kan skrive det mer elegant.
+I stedet for å bruke "apply" kjører vi bare "is.na".
+I R kan man bruke en funksjon på en hel dataframe.
+For alle disse rutene her, gi oss svar på hvor mange NA som finnes ("heights %\>% is.na()").
+
+```{r}
+# NAs in my_heights?
+heights %>% 
+  is.na() %>% 
+  apply(MARGIN = 2, FUN = sum) 
+```
+
+Et alternativ til "apply" er "colSums", dersom vi ønsker sum på kolonnene.
+
+```{r}
+# number of NAs in each variable
+# drop variables with no NA
+heights %>% 
+  is.na() %>% 
+  colSums()
+```
+
+## Punktum og firkantklammer
+
+Hiver heights inn i pipen.
+Gjør om til True og False for å se etter NA verdier.
+Husk at punktum her står for dataene i pakken!
+Firkantklammer sier noe om hvilke verdier vi vil ha med fra dataframen i pipen.
+(Bruk cmd + enter for å kjøre deler av en chunk).
+Ender opp med kun listet de variablene der vi virkelig har NA verdier.
+
+```{r}
+# number of NAs in each variable
+# drop variables with no NA
+heights %>% 
+  is.na() %>% 
+  colSums() %>% 
+  .[. > 0]
+```
+
+## Deskriptiv statistikk
+
+Hiver heights inn i en pipe og sike ikke ta med sivilstatus eller kjønn variablene.
+ST er nok forkortelse for sumtable.
+I dette tilfellet trenger man egentlig ikke punktumet inne i parentesen.
+Vi ser at tabellen kommer under "viewer".
+
+```{r}
+# package vtable must be installed
+heights %>% 
+  select(-marital, -sex) %>% 
+  # . to stop RStudio complaining about no data
+  vtable::st(.)
+```
+
+Først droppet vi to variabler, nå tar vi kun de to variablene med.
+Marital har fem ulike kategorier definert; singel, gift, separert, skilt eller enke.
+Sex har to; menn og kvinner.
+Litt flere kvinner enn menn.
+Gifte utgjør en stor andel.
+Har nok noe med alderfordelingen til datasettet å gjøre.
+
+```{r}
+# package vtable must be installed
+heights %>% 
+  select(marital, sex) %>% 
+  vtable::st(.)
+```
+
+Nå sier vi at dropp sivilstatus, men ta de andre variablene og grupper de til hensyn på kjønn.
+
+NB!
+Vi legger merke til at gjennomsnittlig inntekt for menn er ca.
+50 000 og for kvinner ca.
+30 000.
+Altså det tyder på at inntekt ikke bare har noe med høyde å gjøre!
+Kvinner er kortere.
+Alder kunne også ha spilt inn, mtp.
+at yngre har mindre formue/ansinitet.
+Her ser vi at alder er lik.
+
+Slike tabeller er et verktøy for å få noe ideer for hva som er sammenhenger her, men vi må huske å tenke litt over det!
+(Dataene er fra 2012).
+
+```{r}
+heights %>% 
+  select(-marital) %>% 
+  vtable::st(group = 'sex')
+```
+
+Den største gruppen var gift.
+Her forenkler vi variabelen.
+Vi lager en ny variabel married.
+Enten er du gift eller ikke gift.
+Vi fornekler fra 5 kategorier til2 kategorier.
+Bruker married = if_else for å si hva den nye variabelen skal være.
+
+Etter å ha lagd den nye variablen bruker vi filter og sier grupper med hensyn på den nye variabelen vår married.
+Den nye tabellen i viewer viser bare kvinner og skiller mellom gift og ikke gift.
+
+```{r}
+# package vtable must be installed
+heights %>% 
+  mutate(
+    married = if_else(
+      marital == 'married', 
+      TRUE, 
+      FALSE
+      )
+    ) %>% 
+  filter(sex == 'female') %>% 
+  select(-sex, -marital) %>% 
+  vtable::st(group = 'married')
+```
+
+Vi kan også få en tilsvarende tabell for menn.
+Vi ser det er en markant forskjell på menn og kvinnner når det gjelder inntekt om man er gift eller ikke.
+For kvinner, kanskje 10% forskjell på gift og ugift i lønn.
+For menn, gifte menn tjener mer enn dobbelt så mye som ugifte menn.
+Kanskje det er denne variabelen som betyr noe.
+
+(Bruk piltaster i viewer for å bytte mellom tabeller man har lagd).
+
+```{r}
+heights %>% 
+  mutate(
+    married = if_else(
+      marital == 'married', 
+      TRUE, 
+      FALSE
+      )
+    ) %>% 
+  filter(sex == 'male') %>% 
+  select(-sex, -marital) %>% 
+  vtable::st(group = 'married')
+```
+
+## Grafisk fremstilling (plot)
+
+Her bruker vi ggplot.
+Bruker datasettet heights.
+Bruker geom_bar for å lage plotet.
+Vi vil lage et bar-plot.
+Her vil vi ha education.
+I education har man manglende verdier, derfor bruker vi "na.rm = TRUE".
+Kjører vi chunken uten na.rm får vi en advarsel fra R om at det finnes NA-verdier.
+Generell anbefaling ved ggplot er å kjøre med de manglende verdiene.
+Dersom man skal ha det i en rapport og ikke ønsker feilmelding bruker vi "na.rm = TRUE".
+
+En ide for plotet under er å dele inn i de som ikke har fullført evt.
+utdanninger.
+
+```{r}
+ggplot(data = heights) +
+  geom_bar(mapping = aes(x = education), na.rm = TRUE)
+```
+
+### Histogram
+
+Klassisk hist bruker man breaks, i histogram bruker vi bins.
+Generelt er dataene de samme, men vi ser at søylene ser forskjellige ut.
+Det er fordi det brukes ulike regler i de to histogrammene.
+Man må bare velge en av de to.
+
+Lager klassisk histogram ved hist funksjonen.
+Vil også ha det som ggplot.
+Gjør et klassisk plot om til et ggplot.
+Da kan man bruke grid.arrange.
+
+```{r}
+hist1 <- ggplotify::as.ggplot(~hist(heights$income, breaks = 20))
+hist2 <- ggplot(heights, mapping = aes(x = income)) +
+  geom_histogram(bins = 20)
+
+gridExtra::grid.arrange(hist1, hist2, ncol = 2)
+```
+
+Kan også bruke logaritme (log).
+Et lite triks: vi legger til 1 inne i log.
+ln til 0 minus uendelig.
+ln til 1 er null.
+ln til e er 1.
+Verdier mellom 1 og e gir negativt svar.
+Verdier større enn e gir positivt svar.
+Vi kan ikke plote minus uendelig.
+Derfor legger vi til 1 til alle inntektene.
+Dvs.
+de som har null i inntekt får en i inntekt.
+Da får man en liten feil.
+
+```{r}
+hist1 <- ggplotify::as.ggplot(~hist(log(heights$income + 1), breaks = 20))
+hist2 <- ggplot(heights, mapping = aes(x = log(income) + 1)) +
+  geom_histogram(bins = 20)
+
+gridExtra::grid.arrange(hist1, hist2, ncol = 2)
+```
+
+Histogram for de andre variablene under.
+nrow lik 1 betyr at vi får de tre histogrammene på rekke.
+Bruker vi ncol lik 1 får vi dem under hverandre.
+
+```{r}
+hist3 <- ggplot(heights, mapping = aes(x = income)) +
+  geom_histogram(bins = 40, na.rm = TRUE)
+hist4 <- ggplot(heights, mapping = aes(x = height)) +
+  geom_histogram(bins = 40, na.rm = TRUE)
+hist5 <- ggplot(heights, mapping = aes(x = weight)) +
+  geom_histogram(bins = 40, na.rm = TRUE)
+gridExtra::grid.arrange(hist3, hist4, hist5, nrow = 1)
+```
+
+Her ser vi flere variabler.
+afqt er en form for iq test.
+Vi bør undersøke hvorfor noen har null, kanskje de ikke fullførte testen.
+
+```{r}
+hist6 <- ggplot(heights, mapping = aes(x = age)) +
+  geom_histogram(bins = 40, na.rm = TRUE)
+hist7 <- ggplot(heights, mapping = aes(x = education)) +
+  geom_histogram(bins = 40, na.rm = TRUE)
+hist8 <- ggplot(heights, mapping = aes(x = afqt)) +
+  geom_histogram(bins = 40, na.rm = TRUE)
+gridExtra::grid.arrange(hist6, hist7, hist8, nrow = 1)
+```
+
+Density-plot for menn og kvinner.
+Har alltid en mer break verdi enn det vi har kategorier.
+Generelt sett har de med høy utdanning høyest lønn.
+
+```{r}
+heights %>% 
+  mutate(
+    edu_fac = cut(education, 
+                  breaks = c(0, 12, 14, 16, 21), 
+                  labels = c("NotHS", "NotTC", "NotC", "C+"),
+                  right = FALSE) 
+  ) %>% 
+  filter(!is.na(edu_fac) & income > 0) %>%
+  ggplot(mapping = aes(x = income, fill = edu_fac, colour = edu_fac)) +
+  geom_density(alpha = 0.2, na.rm = TRUE) + 
+  facet_wrap(~sex)
+```
+
+(Fortsettelse neste time).
+Det første vi har gjort er å kutte opp utdanningsvariabelen i ulike grupper.
+Deretter setter vi labels på de ulike gruppene.
+right = FALSE betyr at vi ikke tar med tallet til høyre i intervallet, f.eks.
+12, 14 osv.
+er ikke med.
+
+Vil filtrer dataene og sender de videre til ggplot.
+Der oppgir vi hvordan vi ønsker formateringen av figuren.
+Fill er fargene inne, colour gjør at linjen rundt grafikken er samme farge som innholdet.
+Hvis vi tar colour vekk får vi en svart linje langs dataene.
+
+Geom_density, aplha = 0.2 styrer gjennomsiktighet.
+na.rm = TRUE gjør at vi tar med NA-verdier.
+Facet_wrap sex betyr at vi får to figurer.
+Her kan vi f.eks.
+skrive marital.
+Da ender vi opp med flere figurer.
+
+Bruk alt + \^ for å få følgende tegn: \~
+
+Vi har facet_grid og facet_wrap.
+
+(Man kan endre y-akse i ggplot, men vi går ikke gjennom det nå. Det er density som vises på y-aksen her).
+
+Tolkning: Langt til venstre med høy topp, som med kvinner, betyr lave inntekter.
+Lenger til høyre betyr høyere inntekter.
+Dess høyere utdanning, dess lenger bort mot høyre ligger kurven.
+Høyere lønnsnivå jevnt over for de som har college+ utdanning både for menn og kvinner.
+Det er flere menn som har relativt høy inntekt enn kvinner.
+
+```{r}
+heights %>% 
+  mutate(
+    edu_fac = cut(education, 
+                  breaks = c(0, 12, 14, 16, 21), 
+                  labels = c("NotHS", "NotTC", "NotC", "C+"),
+                  right = FALSE) 
+  ) %>% 
+  filter(!is.na(edu_fac) & income > 0 & income < 250000) %>%
+  ggplot(mapping = aes(x = income, fill = edu_fac, colour = edu_fac)) +
+  geom_density(alpha = 0.2, na.rm = TRUE) + 
+  facet_wrap(~sex)
+```
+
+Her deler vi heller på utdanning.
+Dette er samme data illustrert på en annen måte.
+
+Tolkning:
+
+NotHS: Mange kvinner tjener veldig lite, de har høy topp helt til venstre.
+Menn har toppen litt lenger litt høyre.
+
+Stort sett samme bilde for resterende utdanningsgrupper.
+Kvinner er generelt litt lavere.
+Dersom kvinner tjener mindre kan det se ut som at høyden betyr noe, mens det i virkeligheten ikke er tilfelle.
+
+```{r}
+heights %>% 
+  mutate(
+    edu_fac = cut(education, 
+                  breaks = c(0, 12, 14, 16, 21), 
+                  labels = c("NotHS", "NotTC", "NotC", "C+"),
+                  right = FALSE) 
+  ) %>% 
+  filter(!is.na(edu_fac) & income > 0) %>%
+  ggplot(mapping = aes(x = income, fill = sex, colour = sex)) +
+  geom_density(alpha = 0.2, na.rm = TRUE) + 
+  facet_wrap(~edu_fac)
+```
+
+### BoxPlot
+
+Vi bruker de samme variablene, dvs.
+utdanningsnivå.
+Vi ser vi har NA-verdier for menn.
+Linjen som vi ser i mitden inne i firkanten angir median, dvs.
+middelverdier for inntekter for de ulike utdanningsgruppene.
+50% av dataene er representert med den hvite boksen.
+Linjen nedenfor boksen viser den nedre kvartilen, lavere enn 25%.
+Oppover boksen; Linjen er maks høyden på boksen ganget med 1,5.
+Punktene over er outliers.
+
+Boks nr. 2 er litt høyere, dvs.
+de med HS tjener mer.
+Større spredning (lenger boks) i inntektene for utdanningsgruppen C+.
+Også her ser vi at dess høyere utdanning, dess høyere lønn.
+Vi ser også kjønnsforskjellene når vi sammenligner de to figurene.
+
+```{r}
+heights %>% 
+  mutate(
+    edu_fac = cut(education, 
+                  breaks = c(0, 12, 14, 16, 21), 
+                  labels = c("NotHS", "NotTC", "NotC", "C+"),
+                  right = FALSE) 
+  ) %>% 
+  filter(income > 0) %>% 
+  ggplot(mapping = aes(x = edu_fac, y = income)) +
+  facet_wrap(~sex) + 
+  geom_boxplot()
+```
+
+Vi kan også flippe figurene.
+Horisontalt i stedet for vertikalt.
+
+```{r}
+heights %>% 
+  mutate(
+    edu_fac = cut(education, 
+                  breaks = c(0, 12, 14, 16, 21), 
+                  labels = c("NotHS", "NotTC", "NotC", "C+"),
+                  right = FALSE) 
+  ) %>% 
+  filter(income > 0) %>% 
+  ggplot(mapping = aes(x = edu_fac, y = income)) +
+  facet_wrap(~sex) + 
+  geom_boxplot() + 
+  coord_flip()
+```
+
+## How to treat bad data
+
+Hva skal man gjøre med outliers?
+Man kan sjeldent bare slette dem!
+Har man et lite datasett og hvert datapunkt er gull verdt for oss, da kan det være greit å endre på stusslige data slik at det blir rett.
+Men da må vi huske å dokumentere grundig hva vi gjør.
+
+La ggplot gi sine "warnings" fordi da forklarer den hvor mange NA-verdier man har.
+"Do not use `na.rm = TRUE` in `ggplot` before last edit".
+
+## Covariation
+
+Samvariasjon mellom variabler.
+I ggplot er typisk måte å bruke facets, dvs.
+lage delplot for ulike subset av dataene.
+
+## Categorical and continuous variable
+
+Eksempel FrequencyPoly.
+Vi får en warning om at funksjonen er utdatert.
+"..density.." er utdatert, vi skriver "after_stat".
+Figurene her blir mer kantete.
+Dette styres av binwidth.
+Har man en kategori variabel og kontinuerlig variabel kan vi lage slike figurer.
+
+```{r}
+heights %>% 
+  mutate(
+    edu_fac = cut(education, 
+                  breaks = c(0, 12, 14, 16, 21), 
+                  labels = c("NotHS", "NotTC", "NotC", "C+"),
+                  right = FALSE) 
+  ) %>% 
+  filter(income > 0 & !is.na(weight) & !is.na(afqt) & !is.na(edu_fac)) %>%
+ggplot(mapping = aes(x = income, y = after_stat(density))) +
+  geom_freqpoly(mapping = aes(colour = edu_fac), binwidth = 10000)
+```
+
+## Two categorical variable
+
+```{r}
+heights %>% 
+  mutate(
+    edu_fac = cut(education, 
+                  breaks = c(0, 12, 14, 16, 21), 
+                  labels = c("NotHS", "NotTC", "NotC", "C+"),
+                  right = FALSE) 
+  ) %>% 
+  filter(income > 0 & !is.na(weight) & !is.na(afqt) & !is.na(edu_fac)) %>%
+  ggplot() +
+  geom_count(mapping = aes(x = marital, y = edu_fac))
+```
+
+## One continuouse variable, one with many categories
+
+Der det er lite punkter ser vi en svak skygge, dvs.
+lite observasjoner.
+Dess sterkere farge, dess flere observasjoner har vi.
+Det er derfor vi har satt alpha lik 0,05.
+
+```{r}
+heights %>% 
+  filter(income > 0 & !is.na(weight) & !is.na(afqt) & !is.na(education)) %>%
+  ggplot() +
+  geom_point(mapping = aes(x = education, y = income), alpha = 0.05)
+```
+
+## Two continuous variables
+
+```{r}
+dim(diamonds)
+```
+
+Vi ønsker tyngden på x-aksen og pris på y-aksen.
+Hver av de 53 940 diamantene har sin lille prikk.
+Her kan vi også legge til , alpha = 0.05.
+Et stort tomt område til høyre indikerer at det ikke finnes mange diamanter på 5 karat.
+Her kunne vi kanskje satt en øvre grense.
+
+```{r}
+diamonds %>% 
+  filter(carat < 2.5) |> 
+  ggplot(mapping = aes(x = carat, y = price)) +
+  geom_point(size = 0.1, alpha = 0.05)
+```
+
+Hvor mange diamanter er større eller lik 2,5 karat?
+
+```{r}
+diamonds %>% 
+  filter(carat >= 2.5) |> 
+  nrow()
+```
+
+## Two continuous variables; make one categorical
+
+Bruker BoxPlot for å vise dataene.
+
+```{r}
+diamonds %>% 
+  filter(carat <= 2) %>% 
+  ggplot(mapping = aes(x = carat, y = price)) +
+  geom_boxplot(mapping = aes(group = cut_width(carat, 0.1)))
+```
+
+```{r}
+#| echo: false
+# siste
+```

@@ -1,0 +1,9 @@
+---
+title: "Joins"
+format: html
+editor: visual
+---
+
+# Joins
+
+"Data spread over files/tables and some `key` existing, or possible to generate, that we can use to tie them together".
